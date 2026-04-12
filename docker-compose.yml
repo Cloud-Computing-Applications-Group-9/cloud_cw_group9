@@ -23,6 +23,9 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_NAME=techsalarydb
+      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/techsalarydb
+    ports:
+      - "8000:8000"
     depends_on:
       - postgres
 
