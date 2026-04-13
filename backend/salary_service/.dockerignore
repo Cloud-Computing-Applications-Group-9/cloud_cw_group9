@@ -1,0 +1,39 @@
+# Python cache and bytecode
+
+**pycache**/
+_.pyc
+_.pyo
+\*.pyd
+
+# Virtual environments
+
+venv/
+ENV/
+env/
+
+# Editor/IDE/project files
+
+.vscode/
+_.swp
+_.swo
+
+# Git and version control
+
+.git/
+.gitignore
+
+# Secrets and configuration
+
+.env
+
+# Local config/tools – not needed in container
+
+docker-compose.yml
+.DS*Store
+*.log
+\_.sqlite\*
+\*.db
+
+# Docs and markdown
+
+README.md
