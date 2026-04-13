@@ -35,8 +35,8 @@ def login(data: SignupRequest):
         user = get_user_by_email(db, data.email)
         if not user or not verify_password(data.password, user["password_hash"]):
             raise HTTPException(status_code=401, detail="Invalid email or password")
-        token = create_jwt_token(user["user_id"])
-        return {"user_id": user["user_id"], "token": token}
+        token = create_jwt_token(user["id"])
+        return {"user_id": user["id"], "token": token}
     finally:
         db.close()
 

@@ -14,17 +14,17 @@ def get_db():
 
 def get_user_by_email(db, email):
     with db.cursor() as cur:
-        cur.execute("SELECT user_id, email, password_hash FROM users WHERE email = %s", (email,))
+        cur.execute("SELECT id, email, password_hash FROM users WHERE email = %s", (email,))
         row = cur.fetchone()
         if row:
-            return {"user_id": row[0], "email": row[1], "password_hash": row[2]}
+            return {"id": row[0], "email": row[1], "password_hash": row[2]}
         return None
 
 def create_user(db, email, password_hash):
     user_id = str(uuid.uuid4())
     with db.cursor() as cur:
         cur.execute(
-            "INSERT INTO users (user_id, email, password_hash) VALUES (%s, %s, %s)",
+            "INSERT INTO users (id, email, password_hash) VALUES (%s, %s, %s)",
             (user_id, email, password_hash)
         )
         db.commit()
