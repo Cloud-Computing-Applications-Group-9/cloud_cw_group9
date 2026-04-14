@@ -14,6 +14,22 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/database/init_schema.sql:/docker-entrypoint-initdb.d/init_schema.sql:ro
 
+  identity_service:
+    build: ./backend/identity_service
+    container_name: identity_service
+    environment:
+      - POSTGRES_DB=techsalarydb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - JWT_SECRET=your_jwt_secret
+      - JWT_ALGORITHM=HS256
+    ports:
+      - "8001:8000"
+    depends_on:
+      - postgres
+
   salary_service:
     build: ./backend/salary_service
     container_name: salary_service
