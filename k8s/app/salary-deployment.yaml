@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: salary-service
+  namespace: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: salary-service
+  template:
+    metadata:
+      labels:
+        app: salary-service
+    spec:
+      containers:
+      - name: salary-service
+        image: cloudcw.azurecr.io/cloud_cw_group9:salary_service
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: salary-service-config
+        - secretRef:
+            name: salary-service-secret
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
