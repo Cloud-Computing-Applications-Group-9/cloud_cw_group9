@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --version)",
+      "Bash(npm --version)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"tsc exit: $?\")",
+      "Bash(npx next *)",
+      "Bash(curl -s -o /tmp/home.html -w \"status=%{http_code}\\\\n\" http://localhost:3123/)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -c /tmp/cookies.txt -w 'status=%{http_code}\\\\n' -X POST http://localhost:3123/api/auth/signup -H 'Content-Type: application/json' -d '{\"email\":\"alice@example.com\",\"password\":\"password123\"}')",
+      "Bash(curl -s -b /tmp/cookies.txt -w \"\\\\nstatus=%{http_code}\\\\n\" http://localhost:3123/api/auth/me)",
+      "Bash(curl -s -w \"\\\\nstatus=%{http_code}\\\\n\" http://localhost:3123/api/auth/me)",
+      "Bash(curl -s -o /dev/null -D - \"http://localhost:3123/submissions/new\")"
+    ]
+  }
+}
