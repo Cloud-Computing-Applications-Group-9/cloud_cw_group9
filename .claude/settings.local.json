@@ -12,7 +12,8 @@
       "Bash(curl -s -c /tmp/cookies.txt -w 'status=%{http_code}\\\\n' -X POST http://localhost:3123/api/auth/signup -H 'Content-Type: application/json' -d '{\"email\":\"alice@example.com\",\"password\":\"password123\"}')",
       "Bash(curl -s -b /tmp/cookies.txt -w \"\\\\nstatus=%{http_code}\\\\n\" http://localhost:3123/api/auth/me)",
       "Bash(curl -s -w \"\\\\nstatus=%{http_code}\\\\n\" http://localhost:3123/api/auth/me)",
-      "Bash(curl -s -o /dev/null -D - \"http://localhost:3123/submissions/new\")"
+      "Bash(curl -s -o /dev/null -D - \"http://localhost:3123/submissions/new\")",
+      "Bash(docker --version)"
     ]
   }
 }
