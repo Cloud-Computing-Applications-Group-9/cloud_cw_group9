@@ -13,7 +13,8 @@
       "Bash(curl -s -b /tmp/cookies.txt -w \"\\\\nstatus=%{http_code}\\\\n\" http://localhost:3123/api/auth/me)",
       "Bash(curl -s -w \"\\\\nstatus=%{http_code}\\\\n\" http://localhost:3123/api/auth/me)",
       "Bash(curl -s -o /dev/null -D - \"http://localhost:3123/submissions/new\")",
-      "Bash(docker --version)"
+      "Bash(docker --version)",
+      "Bash(python3 -m py_compile app/__init__.py app/config.py app/schemas.py app/security.py app/clients.py app/main.py app/routes/__init__.py app/routes/auth.py app/routes/salaries.py app/routes/votes.py)"
     ]
   }
 }
