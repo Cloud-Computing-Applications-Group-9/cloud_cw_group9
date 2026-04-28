@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: techsalary
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d techsalary"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  identity-service:
+    build: ./services/identity-service
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/techsalary
+      JWT_SECRET: supersecretkey123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  salary-submission-service:
+    build: ./services/salary-submission-service
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/techsalary
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  vote-service:
+    build: ./services/vote-service
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/techsalary
+      JWT_SECRET: supersecretkey123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  search-service:
+    build: ./services/search-service
+    ports:
+      - "8004:8004"
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/techsalary
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  stats-service:
+    build: ./services/stats-service
+    ports:
+      - "8005:8005"
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/techsalary
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  bff-service:
+    build: ./services/bff-service
+    ports:
+      - "8000:8000"
+    environment:
+      IDENTITY_URL: http://identity-service:8001
+      SALARY_URL: http://salary-submission-service:8002
+      VOTE_URL: http://vote-service:8003
+      SEARCH_URL: http://search-service:8004
+      STATS_URL: http://stats-service:8005
+      JWT_SECRET: supersecretkey123
+    depends_on:
+      - identity-service
+      - salary-submission-service
+      - vote-service
+      - search-service
+      - stats-service
+    restart: unless-stopped
+
+  frontend-service:
+    build: ./services/frontend-service
+    ports:
+      - "80:80"
+    depends_on:
+      - bff-service
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: techsalary-network
