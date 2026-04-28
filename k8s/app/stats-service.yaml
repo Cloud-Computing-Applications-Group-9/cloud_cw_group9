@@ -19,6 +19,12 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8005
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DATABASE_URL
 ---
 apiVersion: v1
 kind: Service

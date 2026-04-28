@@ -11,8 +11,13 @@ import {
 import type { SalarySubmissionInput } from "./validators";
 
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "1";
-const BROWSER_BFF_URL = process.env.NEXT_PUBLIC_BFF_URL ?? "http://localhost:8080";
-const SERVER_BFF_URL = process.env.BFF_URL_INTERNAL ?? BROWSER_BFF_URL;
+const BROWSER_BFF_URL = cleanBaseUrl(process.env.NEXT_PUBLIC_BFF_URL);
+const SERVER_BFF_URL =
+  cleanBaseUrl(process.env.BFF_URL_INTERNAL) || BROWSER_BFF_URL;
+
+function cleanBaseUrl(value: string | undefined): string {
+  return (value ?? "").trim().replace(/\/+$/, "");
+}
 
 function resolveBase(): string {
   if (USE_MOCKS) return "";
@@ -32,7 +37,7 @@ async function resolveUrl(path: string): Promise<string> {
   const base = resolveBase();
   if (base) return `${base}${path}`;
   if (typeof window !== "undefined") return path;
-  // Server-side + mock mode: build absolute URL from request host.
+  // Server-side same-origin calls need an absolute URL for Next's fetch.
   const { headers } = await import("next/headers");
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
@@ -71,8 +76,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
 
   if (!res.ok) {
-    const p = payload as { message?: string; code?: string; detail?: string } | null;
-    const message = p?.message ?? p?.detail ?? res.statusText ?? "Request failed";
+    const p = payload as {
+      message?: string;
+      code?: string;
+      detail?: string;
+    } | null;
+    const message =
+      p?.message ?? p?.detail ?? res.statusText ?? "Request failed";
     throw new ApiError(res.status, message, p?.code);
   }
   return payload as T;
@@ -80,9 +90,15 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const auth = {
   signup: (body: { email: string; password: string }) =>
-    request<{ user: User }>("/api/auth/signup", { method: "POST", body: JSON.stringify(body) }),
+    request<{ user: User }>("/api/auth/signup", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   login: (body: { email: string; password: string }) =>
-    request<{ user: User }>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
+    request<{ user: User }>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   logout: () => request<void>("/api/auth/logout", { method: "POST" }),
   me: async (): Promise<User | null> => {
     try {
@@ -105,14 +121,18 @@ export const salaries = {
   },
   get: (id: string) => request<Submission>(`/api/salaries/${id}`),
   create: (body: SalarySubmissionInput) =>
-    request<Submission>("/api/salaries", { method: "POST", body: JSON.stringify(body) }),
+    request<Submission>("/api/salaries", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };
 
 export const stats = {
   get: (filters: StatsFilters = {}) => {
     const s = new URLSearchParams();
     if (filters.role) s.set("role", filters.role);
-    if (filters.experience_level) s.set("experience_level", filters.experience_level);
+    if (filters.experience_level)
+      s.set("experience_level", filters.experience_level);
     if (filters.country) s.set("country", filters.country);
     if (filters.currency) s.set("currency", filters.currency);
     const qs = s.toString();

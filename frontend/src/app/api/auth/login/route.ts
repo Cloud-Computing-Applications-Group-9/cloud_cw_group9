@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getUserByEmail, verifyPassword } from "@/lib/mocks/db";
 import { setSessionCookie } from "@/lib/mocks/session";
+import { proxyBffRequest, shouldUseMockApi } from "@/lib/server/bff-proxy";
 
 const schema = z.object({
   email: z.string().email(),
@@ -9,6 +10,8 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
+  if (!shouldUseMockApi()) return proxyBffRequest(req, "/api/auth/login");
+
   let body: unknown;
   try {
     body = await req.json();
@@ -21,7 +24,10 @@ export async function POST(req: Request) {
   }
   const user = getUserByEmail(parsed.data.email);
   if (!user || !verifyPassword(user, parsed.data.password)) {
-    return NextResponse.json({ message: "Invalid email or password" }, { status: 401 });
+    return NextResponse.json(
+      { message: "Invalid email or password" },
+      { status: 401 },
+    );
   }
   await setSessionCookie(user.id);
   return NextResponse.json({ user: { id: user.id, email: user.email } });

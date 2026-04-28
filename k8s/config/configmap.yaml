@@ -11,9 +11,13 @@ metadata:
   name: app-config
   namespace: app
 data:
+  BFF_URL_INTERNAL: "http://bff-service.app.svc.cluster.local:8080"
   IDENTITY_SERVICE_URL: "http://identity-service.app.svc.cluster.local:8000"
   SALARY_SERVICE_URL: "http://salary-service.app.svc.cluster.local:8000"
   VOTE_SERVICE_URL: "http://vote-service.app.svc.cluster.local:8000"
   SEARCH_SERVICE_URL: "http://search-service.app.svc.cluster.local:8000"
+  STATS_SERVICE_URL: "http://stats-service.app.svc.cluster.local:8005"
   CORS_ORIGINS: "http://<INGRESS_IP>"
   DEFAULT_PAGE_SIZE: "20"
+  # Set to "true" only when the ingress terminates HTTPS.
+  SESSION_COOKIE_SECURE: "false"

@@ -1,6 +1,7 @@
 # NOTE: NEXT_PUBLIC_BFF_URL is inlined at build time (Next.js limitation).
-# Before deploying, rebuild the frontend image with the real AKS ingress IP:
-#   docker build --build-arg NEXT_PUBLIC_BFF_URL=http://<INGRESS_IP> \
+# For Kubernetes, leave it empty so browser requests use same-origin /api and
+# the Ingress routes those requests to bff-service.
+#   docker build --build-arg NEXT_PUBLIC_BFF_URL="" \
 #                --build-arg NEXT_PUBLIC_USE_MOCKS=0 \
 #                -t <ACR_LOGINSERVER>/frontend:latest ./frontend
 apiVersion: apps/v1
@@ -24,6 +25,14 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
+          env:
+            - name: BFF_URL_INTERNAL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: BFF_URL_INTERNAL
+            - name: NEXT_PUBLIC_USE_MOCKS
+              value: "0"
 ---
 apiVersion: v1
 kind: Service

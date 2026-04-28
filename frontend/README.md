@@ -8,29 +8,29 @@ Ships with a **dev-only mock mode** (in-memory store, seeded with realistic subm
 
 ## Stack
 
-| Concern | Choice |
-|---|---|
-| Framework | Next.js 15 (App Router, Server Components) |
-| Language | TypeScript (strict) |
-| Styling | Tailwind CSS v4 + ShadCN UI (new-york, neutral) |
-| Forms | react-hook-form + zod |
-| Toasts | sonner |
-| Auth | httpOnly cookie set by the BFF — no client-side token handling |
-| Container | node:22-alpine, Next.js standalone output, non-root user |
+| Concern   | Choice                                                         |
+| --------- | -------------------------------------------------------------- |
+| Framework | Next.js 15 (App Router, Server Components)                     |
+| Language  | TypeScript (strict)                                            |
+| Styling   | Tailwind CSS v4 + ShadCN UI (new-york, neutral)                |
+| Forms     | react-hook-form + zod                                          |
+| Toasts    | sonner                                                         |
+| Auth      | httpOnly cookie set by the BFF — no client-side token handling |
+| Container | node:22-alpine, Next.js standalone output, non-root user       |
 
 ---
 
 ## Features
 
-| Journey | Where |
-|---|---|
-| Browse feed (paginated, searchable) | `/` |
-| Submission detail | `/submissions/[id]` |
-| Submit a salary (auth-gated) | `/submissions/new` |
-| Register | `/register` |
-| Log in | `/login` |
-| Vote / unvote (optimistic, with rollback) | feed + detail |
-| Auth-aware header with avatar dropdown | every page |
+| Journey                                   | Where               |
+| ----------------------------------------- | ------------------- |
+| Browse feed (paginated, searchable)       | `/`                 |
+| Submission detail                         | `/submissions/[id]` |
+| Submit a salary (auth-gated)              | `/submissions/new`  |
+| Register                                  | `/register`         |
+| Log in                                    | `/login`            |
+| Vote / unvote (optimistic, with rollback) | feed + detail       |
+| Auth-aware header with avatar dropdown    | every page          |
 
 UX defaults: skeletons during navigation, empty states, accessible labels, focus rings, full keyboard navigation, responsive grid, optimistic voting with toast-based error recovery, and a sign-in prompt when anonymous users try to vote.
 
@@ -49,25 +49,26 @@ Smoke-test path: register → land on feed → submit a salary → upvote it →
 
 ### Scripts
 
-| Command | Purpose |
-|---|---|
-| `npm run dev` | Dev server with HMR |
-| `npm run build` | Production build (emits `.next/standalone`) |
-| `npm run start` | Run the built app |
-| `npm run lint` | ESLint via Next |
-| `npm run typecheck` | `tsc --noEmit` |
+| Command             | Purpose                                     |
+| ------------------- | ------------------------------------------- |
+| `npm run dev`       | Dev server with HMR                         |
+| `npm run build`     | Production build (emits `.next/standalone`) |
+| `npm run start`     | Run the built app                           |
+| `npm run lint`      | ESLint via Next                             |
+| `npm run typecheck` | `tsc --noEmit`                              |
 
 ---
 
 ## Environment variables
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `NEXT_PUBLIC_BFF_URL` | `http://localhost:8080` | Base URL of the BFF service. Ignored when mocks are on. |
-| `NEXT_PUBLIC_USE_MOCKS` | `1` (in `.env.local.example`) | When `1`, the API client targets same-origin `/api/*` mock handlers. Set to empty / unset for real BFF. |
-| `MOCK_SESSION_SECRET` | `dev-only-not-secret` | HMAC secret used by the mock session cookie. Dev only. |
-| `PORT` | `3000` | Server port (Docker image respects this). |
-| `HOSTNAME` | `0.0.0.0` | Bind address (Docker image respects this). |
+| Variable                | Default                       | Purpose                                                                                                                                          |
+| ----------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_BFF_URL`   | empty                         | Optional browser-visible BFF origin. Leave empty in Docker/Kubernetes so the browser uses same-origin `/api/*`.                                  |
+| `BFF_URL_INTERNAL`      | none                          | Server-side BFF origin used by SSR and Next API proxy routes, e.g. `http://bff_service:8080` or `http://bff-service.app.svc.cluster.local:8080`. |
+| `NEXT_PUBLIC_USE_MOCKS` | `1` (in `.env.local.example`) | When `1`, the API client targets same-origin `/api/*` mock handlers. Set to empty / unset for real BFF.                                          |
+| `MOCK_SESSION_SECRET`   | `dev-only-not-secret`         | HMAC secret used by the mock session cookie. Dev only.                                                                                           |
+| `PORT`                  | `3000`                        | Server port (Docker image respects this).                                                                                                        |
+| `HOSTNAME`              | `0.0.0.0`                     | Bind address (Docker image respects this).                                                                                                       |
 
 `NEXT_PUBLIC_*` values are inlined at **build time** — when running in Docker, set them as `--build-arg` (see below), not just runtime env.
 
@@ -81,8 +82,8 @@ Smoke-test path: register → land on feed → submit a salary → upvote it →
 # from repo root
 docker build \
   -t techsalary-frontend:dev \
-  --build-arg NEXT_PUBLIC_BFF_URL=http://localhost:8080 \
-  --build-arg NEXT_PUBLIC_USE_MOCKS=1 \
+  --build-arg NEXT_PUBLIC_BFF_URL="" \
+  --build-arg NEXT_PUBLIC_USE_MOCKS=0 \
   ./frontend
 ```
 
@@ -105,38 +106,36 @@ docker run --rm -p 3000:3000 \
 # → http://localhost:3000
 ```
 
-Pointing at a real BFF on the host:
+Pointing at a real BFF from the container:
 
 ```bash
 docker run --rm -p 3000:3000 \
-  -e NEXT_PUBLIC_BFF_URL=http://host.docker.internal:8080 \
+  -e BFF_URL_INTERNAL=http://host.docker.internal:8080 \
   -e NEXT_PUBLIC_USE_MOCKS= \
   techsalary-frontend:dev
 ```
 
-Note: `NEXT_PUBLIC_BFF_URL` is inlined at **build** time. Changing it at runtime only affects code paths that read `process.env` server-side — for a different value at deploy time, rebuild with the appropriate `--build-arg`.
+Note: `NEXT_PUBLIC_BFF_URL` is inlined at **build** time. Prefer leaving it empty for containerized deployments and setting runtime `BFF_URL_INTERNAL` instead.
 
 ### Add to the project's `docker-compose.yml`
 
-The repo's root `docker-compose.yml` already wires up Postgres, the identity service, and the salary service. Paste the block below under `services:` to add the frontend (don't forget to also add `frontend` to any `depends_on` in front of the BFF once it exists):
+The repo's root `docker-compose.yml` already wires up the full stack. If you need to add the frontend to another compose file, use the same shape:
 
 ```yaml
-  frontend:
-    build:
-      context: ./frontend
-      args:
-        # NEXT_PUBLIC_* are inlined at build time, so they belong here, not in `environment`.
-        NEXT_PUBLIC_BFF_URL: http://bff_service:8000
-        NEXT_PUBLIC_USE_MOCKS: ""           # empty → call the real BFF
-    container_name: frontend
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-    ports:
-      - "3000:3000"
-    depends_on:
-      - identity_service
-      - salary_service
+frontend:
+  build:
+    context: ./frontend
+    args:
+      NEXT_PUBLIC_BFF_URL: "" # browser uses same-origin /api
+      NEXT_PUBLIC_USE_MOCKS: "0"
+  container_name: frontend
+  environment:
+    - BFF_URL_INTERNAL=http://bff_service:8080
+    - NEXT_PUBLIC_USE_MOCKS=0
+  ports:
+    - "3000:3000"
+  depends_on:
+    - bff_service
 ```
 
 For a frontend-only stack while the BFF is still being built, run `NEXT_PUBLIC_USE_MOCKS=1` and skip `depends_on`.
@@ -150,26 +149,26 @@ All API calls go through [`src/lib/api.ts`](src/lib/api.ts), which:
 - Sends `credentials: 'include'` on every fetch so the browser ships the `session` cookie.
 - On the server (RSC pages), forwards the incoming `cookie` header to the BFF so SSR fetches are authenticated.
 - Throws a typed `ApiError(status, message, code?)` on non-2xx for predictable UI handling.
-- Switches origin between the real BFF (`NEXT_PUBLIC_BFF_URL`) and same-origin mock handlers based on `NEXT_PUBLIC_USE_MOCKS`.
+- Uses same-origin `/api/*` in the browser by default; those route handlers proxy to `BFF_URL_INTERNAL` unless `NEXT_PUBLIC_USE_MOCKS=1`.
 
 ### Expected BFF contract
 
-| Method | Path | Body | Returns |
-|---|---|---|---|
-| POST | `/api/auth/signup` | `{ email, password }` | sets `session` cookie, `{ user }` |
-| POST | `/api/auth/login` | `{ email, password }` | sets `session` cookie, `{ user }` |
-| POST | `/api/auth/logout` | — | clears cookie, `204` |
-| GET  | `/api/auth/me` | — | `{ user }` or `401` |
-| GET  | `/api/salaries?page&q` | — | `{ items, total, page, pageSize }` (each item ideally carries `myVote`) |
-| POST | `/api/salaries` | `SalarySubmissionCreate` | created `Submission` |
-| GET  | `/api/salaries/:id` | — | `Submission` (+ `myVote` when authed) |
-| POST | `/api/salaries/:id/vote` | `{ type: 'up' \| 'down' }` | `{ upvotes, downvotes, myVote }` |
-| DELETE | `/api/salaries/:id/vote` | — | `{ upvotes, downvotes, myVote: null }` |
+| Method | Path                     | Body                       | Returns                                                                 |
+| ------ | ------------------------ | -------------------------- | ----------------------------------------------------------------------- |
+| POST   | `/api/auth/signup`       | `{ email, password }`      | sets `session` cookie, `{ user }`                                       |
+| POST   | `/api/auth/login`        | `{ email, password }`      | sets `session` cookie, `{ user }`                                       |
+| POST   | `/api/auth/logout`       | —                          | clears cookie, `204`                                                    |
+| GET    | `/api/auth/me`           | —                          | `{ user }` or `401`                                                     |
+| GET    | `/api/salaries?page&q`   | —                          | `{ items, total, page, pageSize }` (each item ideally carries `myVote`) |
+| POST   | `/api/salaries`          | `SalarySubmissionCreate`   | created `Submission`                                                    |
+| GET    | `/api/salaries/:id`      | —                          | `Submission` (+ `myVote` when authed)                                   |
+| POST   | `/api/salaries/:id/vote` | `{ type: 'up' \| 'down' }` | `{ upvotes, downvotes, myVote }`                                        |
+| DELETE | `/api/salaries/:id/vote` | —                          | `{ upvotes, downvotes, myVote: null }`                                  |
 
 The BFF must:
 
 - Issue the session cookie as `httpOnly`, `SameSite=Lax`, `Path=/`, and `Secure` in production.
-- Reflect the frontend origin in `Access-Control-Allow-Origin` and set `Access-Control-Allow-Credentials: true` (CORS).
+- Reflect the frontend origin in `Access-Control-Allow-Origin` and set `Access-Control-Allow-Credentials: true` if `NEXT_PUBLIC_BFF_URL` points the browser directly at the BFF.
 - Return JSON errors as `{ message, code? }` with appropriate status codes — `401` triggers a redirect to `/login?next=…` from the auth-guarded routes.
 
 ### Submission schema
@@ -213,7 +212,7 @@ frontend/
       login/, register/           # auth pages
       submissions/new/            # auth-gated submit page
       submissions/[id]/           # detail page
-      api/**/route.ts             # DEV-ONLY mock BFF (NEXT_PUBLIC_USE_MOCKS=1)
+      api/**/route.ts             # proxy to BFF; mock BFF when NEXT_PUBLIC_USE_MOCKS=1
     components/
       ui/                         # ShadCN components
       site-header.tsx, user-menu.tsx, submission-card.tsx,
@@ -236,7 +235,8 @@ frontend/
 
 ## Switching from mocks to the real BFF
 
-1. Build / restart the container with `NEXT_PUBLIC_USE_MOCKS=` (empty) and `NEXT_PUBLIC_BFF_URL=<bff origin>`.
-2. The mock route handlers under `src/app/api/**` keep existing — they only get hit when `NEXT_PUBLIC_USE_MOCKS=1`. They can stay in the repo (useful for local dev / Storybook-style demos) or be deleted; nothing else depends on them.
+1. Build / restart the container with `NEXT_PUBLIC_USE_MOCKS=0` and `NEXT_PUBLIC_BFF_URL=""`.
+2. Set runtime `BFF_URL_INTERNAL` to the BFF service URL reachable from the frontend container or pod.
+3. The mock handlers under `src/app/api/**` only run when `NEXT_PUBLIC_USE_MOCKS=1`; otherwise they proxy to the BFF.
 
 No application code changes are required.

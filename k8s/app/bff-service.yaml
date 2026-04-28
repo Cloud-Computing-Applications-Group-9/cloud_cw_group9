@@ -45,6 +45,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: SEARCH_SERVICE_URL
+            - name: STATS_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: STATS_SERVICE_URL
             - name: CORS_ORIGINS
               valueFrom:
                 configMapKeyRef:
@@ -56,7 +61,10 @@ spec:
                   name: app-config
                   key: DEFAULT_PAGE_SIZE
             - name: SESSION_COOKIE_SECURE
-              value: "true"
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: SESSION_COOKIE_SECURE
 ---
 apiVersion: v1
 kind: Service
