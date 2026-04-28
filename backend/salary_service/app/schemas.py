@@ -28,6 +28,8 @@ class SalarySubmissionResponse(BaseModel):
     currency: str
     anonymize: bool
     status: str
+    upvotes: int
+    downvotes: int
     submitted_at: datetime
 
     class Config:

@@ -5,6 +5,7 @@ from app.config import settings
 from app.schemas import AuthCredentials, User, UserResponse
 from app.security import (
     clear_session_cookie,
+    get_session_claims,
     issue_session_cookie,
     require_user_id,
 )
@@ -48,9 +49,8 @@ async def logout(response: Response) -> Response:
 
 @router.get("/me", response_model=UserResponse)
 async def me(request: Request) -> UserResponse:
-    user_id = require_user_id(request)
-    # Identity service does not currently expose a /me endpoint, so we return
-    # what we know from the token. Email is not stored in the JWT today; the
-    # frontend only requires `id` to gate UI state, but we surface an empty
-    # string until identity_service exposes a profile endpoint.
-    return UserResponse(user=User(id=user_id, email=""))
+    claims = get_session_claims(request)
+    user_id = claims.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
+    return UserResponse(user=User(id=user_id, email=claims.get("email", "")))

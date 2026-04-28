@@ -1,6 +1,8 @@
 version: "3.9"
 
 services:
+
+  # ── Database ────────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16
     container_name: dev-postgres
@@ -13,23 +15,107 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/database/init_schema.sql:/docker-entrypoint-initdb.d/init_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d techsalarydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Backend services ─────────────────────────────────────────────────────────
+  identity_service:
+    build: ./backend/identity_service
+    container_name: identity_service
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=techsalarydb
+      - JWT_SECRET=dev-jwt-secret
+    ports:
+      - "8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   salary_service:
     build: ./backend/salary_service
     container_name: salary_service
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=techsalarydb
       - DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/techsalarydb
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
-  # Add other backend services.
+  vote_service:
+    build: ./backend/vote_service
+    container_name: vote_service
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/techsalarydb
+    ports:
+      - "8002:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  search_service:
+    build: ./backend/search_service
+    container_name: search_service
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/techsalarydb
+    ports:
+      - "8003:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  stats_service:
+    build: ./backend/stats_service
+    container_name: stats_service
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/techsalarydb
+    ports:
+      - "8005:8005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  bff_service:
+    build: ./backend/bff_service
+    container_name: bff_service
+    environment:
+      - IDENTITY_SERVICE_URL=http://identity_service:8000
+      - SALARY_SERVICE_URL=http://salary_service:8000
+      - VOTE_SERVICE_URL=http://vote_service:8000
+      - SEARCH_SERVICE_URL=http://search_service:8000
+      - STATS_SERVICE_URL=http://stats_service:8005
+      - JWT_SECRET=dev-jwt-secret
+      - CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - identity_service
+      - salary_service
+      - vote_service
+      - search_service
+      - stats_service
+
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_BFF_URL: http://localhost:8080
+        NEXT_PUBLIC_USE_MOCKS: "0"
+    container_name: frontend
+    environment:
+      - BFF_URL_INTERNAL=http://bff_service:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - bff_service
 
 volumes:
   postgres_data:

@@ -22,7 +22,7 @@ def signup(data: SignupRequest):
         if get_user_by_email(db, data.email):
             raise HTTPException(status_code=400, detail="Email already registered")
         user_id = create_user(db, data.email, hash_password(data.password))
-        token = create_jwt_token(user_id)
+        token = create_jwt_token(user_id, data.email)
         return {"user_id": user_id, "token": token}
     finally:
         db.close()
@@ -35,7 +35,7 @@ def login(data: SignupRequest):
         user = get_user_by_email(db, data.email)
         if not user or not verify_password(data.password, user["password_hash"]):
             raise HTTPException(status_code=401, detail="Invalid email or password")
-        token = create_jwt_token(user["id"])
+        token = create_jwt_token(user["id"], user["email"])
         return {"user_id": user["id"], "token": token}
     finally:
         db.close()

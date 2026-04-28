@@ -1,0 +1,19 @@
+# Non-secret configuration for all application services (namespace: app)
+#
+# CORS_ORIGINS: set to the real AKS ingress IP or domain after provisioning.
+# To get the ingress IP after deployment:
+#   kubectl get svc ingress-nginx-controller -n ingress-nginx
+# Then update this value and run: kubectl apply -f k8s/config/configmap.yaml
+# Multiple origins can be comma-separated: "http://1.2.3.4,https://yourdomain.com"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: app
+data:
+  IDENTITY_SERVICE_URL: "http://identity-service.app.svc.cluster.local:8000"
+  SALARY_SERVICE_URL: "http://salary-service.app.svc.cluster.local:8000"
+  VOTE_SERVICE_URL: "http://vote-service.app.svc.cluster.local:8000"
+  SEARCH_SERVICE_URL: "http://search-service.app.svc.cluster.local:8000"
+  CORS_ORIGINS: "http://<INGRESS_IP>"
+  DEFAULT_PAGE_SIZE: "20"

@@ -1,13 +1,23 @@
-import { ApiError, Paged, Submission, User, VoteState, VoteType } from "./types";
+import {
+  ApiError,
+  Paged,
+  StatsFilters,
+  StatsResponse,
+  Submission,
+  User,
+  VoteState,
+  VoteType,
+} from "./types";
 import type { SalarySubmissionInput } from "./validators";
 
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "1";
-const BFF_URL = process.env.NEXT_PUBLIC_BFF_URL ?? "http://localhost:8080";
+const BROWSER_BFF_URL = process.env.NEXT_PUBLIC_BFF_URL ?? "http://localhost:8080";
+const SERVER_BFF_URL = process.env.BFF_URL_INTERNAL ?? BROWSER_BFF_URL;
 
 function resolveBase(): string {
   if (USE_MOCKS) return "";
-  if (typeof window !== "undefined") return BFF_URL;
-  return BFF_URL;
+  if (typeof window !== "undefined") return BROWSER_BFF_URL;
+  return SERVER_BFF_URL;
 }
 
 async function serverCookieHeader(): Promise<string | undefined> {
@@ -96,6 +106,18 @@ export const salaries = {
   get: (id: string) => request<Submission>(`/api/salaries/${id}`),
   create: (body: SalarySubmissionInput) =>
     request<Submission>("/api/salaries", { method: "POST", body: JSON.stringify(body) }),
+};
+
+export const stats = {
+  get: (filters: StatsFilters = {}) => {
+    const s = new URLSearchParams();
+    if (filters.role) s.set("role", filters.role);
+    if (filters.experience_level) s.set("experience_level", filters.experience_level);
+    if (filters.country) s.set("country", filters.country);
+    if (filters.currency) s.set("currency", filters.currency);
+    const qs = s.toString();
+    return request<StatsResponse>(`/api/stats${qs ? `?${qs}` : ""}`);
+  },
 };
 
 export const votes = {

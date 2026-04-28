@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bff-service
+  namespace: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bff-service
+  template:
+    metadata:
+      labels:
+        app: bff-service
+    spec:
+      containers:
+        - name: bff-service
+          image: <ACR_LOGINSERVER>/bff-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: JWT_SECRET
+            - name: IDENTITY_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: IDENTITY_SERVICE_URL
+            - name: SALARY_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: SALARY_SERVICE_URL
+            - name: VOTE_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: VOTE_SERVICE_URL
+            - name: SEARCH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: SEARCH_SERVICE_URL
+            - name: CORS_ORIGINS
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: CORS_ORIGINS
+            - name: DEFAULT_PAGE_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DEFAULT_PAGE_SIZE
+            - name: SESSION_COOKIE_SECURE
+              value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bff-service
+  namespace: app
+spec:
+  selector:
+    app: bff-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP

@@ -50,6 +50,15 @@ def require_user_id(request: Request) -> str:
     return user_id
 
 
+def get_session_claims(request: Request) -> dict:
+    token = get_session_token(request)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+        )
+    return _decode(token)
+
+
 def optional_user_id(request: Request) -> Optional[str]:
     token = get_session_token(request)
     if not token:

@@ -48,6 +48,49 @@ export interface VoteState {
   myVote: VoteType | null;
 }
 
+export interface StatsSummary {
+  avg: number;
+  median: number;
+  p25: number;
+  p75: number;
+  min: number;
+  max: number;
+  count: number;
+}
+
+export interface ExperienceBreakdown extends StatsSummary {
+  experience_level: string;
+}
+
+export interface RoleBreakdown extends StatsSummary {
+  role_title: string;
+}
+
+export interface CurrencyBreakdown {
+  currency: string;
+  count: number;
+}
+
+export interface StatsResponse {
+  overall: StatsSummary;
+  byExperience: ExperienceBreakdown[];
+  topRoles: RoleBreakdown[];
+  byCurrency: CurrencyBreakdown[];
+  filters: {
+    role: string | null;
+    experience_level: string | null;
+    country: string | null;
+    currency: string | null;
+  };
+}
+
+export interface StatsFilters {
+  role?: string;
+  experience_level?: string;
+  country?: string;
+  currency?: string;
+}
+
 export class ApiError extends Error {
   status: number;
   code?: string;

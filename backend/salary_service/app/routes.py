@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import SalarySubmission
@@ -6,6 +6,28 @@ from app.schemas import SalarySubmissionCreate, SalarySubmissionResponse
 from uuid import UUID
 
 router = APIRouter(prefix="/api/salaries", tags=["Salary Submissions"])
+
+
+# --- GET: List submissions with pagination ---
+
+@router.get("")
+def list_submissions(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    offset = (page - 1) * page_size
+    base_q = db.query(SalarySubmission).filter(SalarySubmission.status == "APPROVED")
+    total = base_q.count()
+    rows = (
+        base_q
+        .order_by(SalarySubmission.submitted_at.desc())
+        .offset(offset)
+        .limit(page_size)
+        .all()
+    )
+    items = [SalarySubmissionResponse.model_validate(r) for r in rows]
+    return {"items": items, "total": total, "page": page, "pageSize": page_size}
 
 
 # --- POST: Submit a new salary ---

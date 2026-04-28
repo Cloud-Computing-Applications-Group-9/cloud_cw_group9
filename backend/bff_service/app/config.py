@@ -16,6 +16,9 @@ class Settings:
     search_service_url: str = os.getenv(
         "SEARCH_SERVICE_URL", "http://search_service:8000"
     )
+    stats_service_url: str = os.getenv(
+        "STATS_SERVICE_URL", "http://stats_service:8005"
+    )
 
     jwt_secret: str = os.getenv("JWT_SECRET", "your_jwt_secret")
     jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")

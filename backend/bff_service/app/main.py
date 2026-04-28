@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.clients import close_client
 from app.config import settings
-from app.routes import auth, salaries, votes
+from app.routes import auth, salaries, stats, votes
 
 
 @asynccontextmanager
@@ -31,6 +31,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(salaries.router)
 app.include_router(votes.router)
+app.include_router(stats.router)
 
 
 @app.get("/health")

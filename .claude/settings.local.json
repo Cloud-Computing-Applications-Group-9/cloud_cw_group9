@@ -14,7 +14,10 @@
       "Bash(curl -s -w \"\\\\nstatus=%{http_code}\\\\n\" http://localhost:3123/api/auth/me)",
       "Bash(curl -s -o /dev/null -D - \"http://localhost:3123/submissions/new\")",
       "Bash(docker --version)",
-      "Bash(python3 -m py_compile app/__init__.py app/config.py app/schemas.py app/security.py app/clients.py app/main.py app/routes/__init__.py app/routes/auth.py app/routes/salaries.py app/routes/votes.py)"
+      "Bash(python3 -m py_compile app/__init__.py app/config.py app/schemas.py app/security.py app/clients.py app/main.py app/routes/__init__.py app/routes/auth.py app/routes/salaries.py app/routes/votes.py)",
+      "Bash(docker build *)",
+      "Bash(mkdir -p \"/Users/Thomy/Documents/Code lives here/cloud_cw_group9/frontend/public\")",
+      "Bash(touch \"/Users/Thomy/Documents/Code lives here/cloud_cw_group9/frontend/public/.gitkeep\")"
     ]
   }
 }

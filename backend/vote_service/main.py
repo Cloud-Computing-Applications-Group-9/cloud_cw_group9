@@ -1,56 +1,143 @@
-from fastapi import FastAPI, HTTPException, Header
+import os
+from typing import Literal, Optional
+
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
-from typing import Optional
 
 app = FastAPI(title="Vote Service")
 
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres:postgres@localhost:5432/techsalarydb",
+)
 APPROVAL_THRESHOLD = 3
 
-votes = []
-submission_status = {}
 
 class VoteRequest(BaseModel):
-    submission_id: int
-    vote_type: str  # up or down
+    type: Literal["up", "down"]
+    user_id: str
+
+
+def _get_conn():
+    return psycopg2.connect(DATABASE_URL)
+
+
+def _sync_counts(cur, submission_id: str) -> None:
+    """Recompute upvotes/downvotes on salary.submissions and auto-approve."""
+    cur.execute(
+        """
+        UPDATE salary.submissions
+        SET
+            upvotes   = (SELECT COUNT(*) FROM community.votes
+                         WHERE submission_id = %s::uuid AND vote_type = 'up'),
+            downvotes = (SELECT COUNT(*) FROM community.votes
+                         WHERE submission_id = %s::uuid AND vote_type = 'down'),
+            status    = CASE
+                          WHEN (SELECT COUNT(*) FROM community.votes
+                                WHERE submission_id = %s::uuid AND vote_type = 'up') >= %s
+                          THEN 'APPROVED'
+                          ELSE status
+                        END
+        WHERE id = %s::uuid
+        """,
+        (submission_id, submission_id, submission_id, APPROVAL_THRESHOLD, submission_id),
+    )
+
 
 @app.get("/")
 def home():
     return {"message": "Vote service running"}
 
-@app.post("/vote")
-def submit_vote(payload: VoteRequest, authorization: Optional[str] = Header(None)):
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Login required to vote")
 
-    if payload.vote_type not in ["up", "down"]:
-        raise HTTPException(status_code=400, detail="vote_type must be 'up' or 'down'")
+@app.post("/api/salaries/{submission_id}/vote")
+def cast_vote(
+    submission_id: str,
+    payload: VoteRequest,
+    x_user_id: Optional[str] = Header(None),
+):
+    user_id = x_user_id or payload.user_id
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
 
-    votes.append(payload.dict())
+    with _get_conn() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                INSERT INTO community.votes (submission_id, user_id, vote_type)
+                VALUES (%s::uuid, %s::uuid, %s)
+                ON CONFLICT (submission_id, user_id)
+                DO UPDATE SET vote_type = EXCLUDED.vote_type
+                """,
+                (submission_id, user_id, payload.type),
+            )
+            _sync_counts(cur, submission_id)
+            cur.execute(
+                "SELECT upvotes, downvotes FROM salary.submissions WHERE id = %s::uuid",
+                (submission_id,),
+            )
+            row = cur.fetchone()
 
-    upvotes = len([
-        v for v in votes
-        if v["submission_id"] == payload.submission_id and v["vote_type"] == "up"
-    ])
+    if not row:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    return {"upvotes": row["upvotes"], "downvotes": row["downvotes"], "myVote": payload.type}
 
-    downvotes = len([
-        v for v in votes
-        if v["submission_id"] == payload.submission_id and v["vote_type"] == "down"
-    ])
 
-    status = "APPROVED" if upvotes >= APPROVAL_THRESHOLD else "PENDING"
-    submission_status[payload.submission_id] = status
+@app.delete("/api/salaries/{submission_id}/vote")
+def remove_vote(
+    submission_id: str,
+    x_user_id: Optional[str] = Header(None),
+):
+    if not x_user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
 
-    return {
-        "message": "Vote recorded",
-        "submission_id": payload.submission_id,
-        "upvotes": upvotes,
-        "downvotes": downvotes,
-        "status": status
-    }
+    with _get_conn() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                "DELETE FROM community.votes WHERE submission_id = %s::uuid AND user_id = %s::uuid",
+                (submission_id, x_user_id),
+            )
+            _sync_counts(cur, submission_id)
+            cur.execute(
+                "SELECT upvotes, downvotes FROM salary.submissions WHERE id = %s::uuid",
+                (submission_id,),
+            )
+            row = cur.fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    return {"upvotes": row["upvotes"], "downvotes": row["downvotes"], "myVote": None}
+
 
 @app.get("/vote/{submission_id}")
-def get_vote_status(submission_id: int):
+def get_vote_status(
+    submission_id: str,
+    x_user_id: Optional[str] = Header(None),
+):
+    with _get_conn() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                "SELECT upvotes, downvotes, status FROM salary.submissions WHERE id = %s::uuid",
+                (submission_id,),
+            )
+            row = cur.fetchone()
+            my_vote = None
+            if x_user_id:
+                cur.execute(
+                    "SELECT vote_type FROM community.votes WHERE submission_id = %s::uuid AND user_id = %s::uuid",
+                    (submission_id, x_user_id),
+                )
+                v = cur.fetchone()
+                if v:
+                    my_vote = v["vote_type"]
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Submission not found")
     return {
         "submission_id": submission_id,
-        "status": submission_status.get(submission_id, "PENDING")
+        "upvotes": row["upvotes"],
+        "downvotes": row["downvotes"],
+        "status": row["status"],
+        "myVote": my_vote,
     }
