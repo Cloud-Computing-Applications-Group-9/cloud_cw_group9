@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Salary Transparency Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #1e1e1e;
+            color: #fff;
+            padding: 2rem 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            padding: 1.5rem 1.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            margin-bottom: 2rem;
+        }
+
+        .nav-item {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: #333;
+        }
+
+        .nav-item.active {
+            background-color: #007bff;
+            border-left-color: #0056b3;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            flex: 1;
+        }
+
+        .section {
+            display: none;
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        h1 {
+            margin-bottom: 1.5rem;
+            color: #1e1e1e;
+        }
+
+        h2 {
+            margin-bottom: 1rem;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button.secondary {
+            background-color: #6c757d;
+        }
+
+        button.secondary:hover {
+            background-color: #5a6268;
+        }
+
+        button.success {
+            background-color: #28a745;
+        }
+
+        button.success:hover {
+            background-color: #218838;
+        }
+
+        button.danger {
+            background-color: #dc3545;
+        }
+
+        button.danger:hover {
+            background-color: #c82333;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .alert.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .results-table thead {
+            background-color: #f8f9fa;
+        }
+
+        .results-table th, .results-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .results-table th {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .results-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .vote-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .vote-buttons button {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-card {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e1e1e;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            color: #666;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            border-bottom-color: #007bff;
+            color: #007bff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                border-right: none;
+                border-bottom: 1px solid #333;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .nav-item {
+                display: inline-block;
+                padding: 1rem;
+                width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">💰 TechSalary</div>
+        <div class="nav-item active" data-section="search">🔍 Search Salaries</div>
+        <div class="nav-item" data-section="pending">⏳ Vote on Pending</div>
+        <div class="nav-item" data-section="submit">📝 Submit Salary</div>
+        <div class="nav-item" data-section="auth">🔐 Login/Signup</div>
+        <div class="nav-item" data-section="stats">📊 Statistics</div>
+    </div>
+
+    <div class="main-content">
+        <!-- Search Section -->
+        <div class="section active" id="search">
+            <h1>Sri Lanka Tech Salaries</h1>
+            <p style="margin-bottom:1.5rem; color:#666;">Showing verified salary data from Sri Lankan tech professionals. Salaries are grouped by designation.</p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Search by Designation</label>
+                    <input type="text" id="searchRole" placeholder="e.g., Software Engineer" oninput="searchSalaries()">
+                </div>
+                <div class="form-group">
+                    <label>Experience Level</label>
+                    <select id="searchLevel" onchange="searchSalaries()">
+                        <option value="">All Levels</option>
+                        <option value="junior">Junior</option>
+                        <option value="mid">Mid</option>
+                        <option value="senior">Senior</option>
+                        <option value="lead">Lead</option>
+                    </select>
+                </div>
+            </div>
+            <div id="searchResults" style="margin-top: 2rem;"><div class="loading">Loading salaries...</div></div>
+        </div>
+
+        <!-- Vote on Pending Section -->
+        <div class="section" id="pending">
+            <h1>Vote on Pending Submissions</h1>
+            <p style="margin-bottom:1.5rem; color:#666;">Help the community by voting on salary submissions below. A submission needs 3 net upvotes to be approved and appear in search results.</p>
+            <div id="pendingLoginNotice" class="alert error hidden">You must be logged in to vote. Please go to Login/Signup first.</div>
+            <button onclick="loadPending()">🔄 Refresh List</button>
+            <div id="pendingResults" style="margin-top: 2rem;"><div class="loading">Loading pending submissions...</div></div>
+        </div>
+
+        <!-- Submit Section -->
+        <div class="section" id="submit">
+            <h1>Submit Salary</h1>
+            <p style="margin-bottom:1.5rem; color:#666;">This platform is for Sri Lankan tech professionals. All submissions are recorded for Sri Lanka.</p>
+            <div id="submitMessage"></div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Job Title *</label>
+                    <input type="text" id="jobTitle" placeholder="e.g., Senior Software Engineer">
+                </div>
+                <div class="form-group">
+                    <label>Company *</label>
+                    <input type="text" id="company" placeholder="e.g., TechCorp">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Experience Level *</label>
+                    <select id="experienceLevel">
+                        <option value="">Select Level</option>
+                        <option value="junior">Junior</option>
+                        <option value="mid">Mid</option>
+                        <option value="senior">Senior</option>
+                        <option value="lead">Lead</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Years of Experience *</label>
+                    <input type="number" id="yearsExperience" placeholder="e.g., 5">
+                </div>
+                <div class="form-group">
+                    <label>Annual Salary (LKR) *</label>
+                    <input type="number" id="annualSalary" placeholder="e.g., 2000000">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="anonymize" checked>
+                    Keep my submission anonymous (company name will be hidden)
+                </label>
+            </div>
+            <button onclick="submitSalary()">Submit Salary</button>
+        </div>
+
+        <!-- Auth Section -->
+        <div class="section" id="auth">
+            <h1>Authentication</h1>
+            <div id="authMessage"></div>
+
+            <!-- Login/Signup Tabs -->
+            <div class="tabs">
+                <button class="tab-button active" onclick="switchTab(event, 'login')">Login</button>
+                <button class="tab-button" onclick="switchTab(event, 'signup')">Sign Up</button>
+            </div>
+
+            <!-- Login Tab -->
+            <div id="login" class="tab-content active">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Your password">
+                </div>
+                <button onclick="login()">Login</button>
+                <div id="loginStatus" style="margin-top: 1rem;"></div>
+            </div>
+
+            <!-- Signup Tab -->
+            <div id="signup" class="tab-content">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" placeholder="At least 6 characters">
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="signupPasswordConfirm" placeholder="Confirm your password">
+                </div>
+                <button onclick="signup()">Sign Up</button>
+                <div id="signupStatus" style="margin-top: 1rem;"></div>
+            </div>
+
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #ddd;">
+                <h2>Current Session</h2>
+                <div id="sessionStatus">Not logged in</div>
+                <button id="logoutBtn" class="danger hidden" onclick="logout()" style="margin-top: 1rem;">Logout</button>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="section" id="stats">
+            <h1>Sri Lanka Tech Salary Statistics</h1>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Filter by Role (Optional)</label>
+                    <input type="text" id="statsRole" placeholder="e.g., Software Engineer">
+                </div>
+            </div>
+            <button onclick="getStats()">Get Statistics</button>
+            <div id="statsResults" style="margin-top: 2rem;"></div>
+        </div>
+    </div>
+
+    <script>
+        // API base URL
+        const API_URL = '/api';
+
+        // Initialize
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const section = item.getAttribute('data-section');
+                switchSection(section);
+            });
+        });
+
+        // Load token if exists, then load salaries on start
+        window.addEventListener('load', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                updateSessionStatus();
+            }
+            searchSalaries();
+        });
+
+        // Navigation
+        function switchSection(section) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+            document.getElementById(section).classList.add('active');
+            document.querySelector(`[data-section="${section}"]`).classList.add('active');
+
+            if (section === 'pending') {
+                loadPending();
+            } else if (section === 'search') {
+                searchSalaries();
+            }
+        }
+
+        function switchTab(event, tab) {
+            event.preventDefault();
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Auth functions
+        function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showMessage('loginStatus', 'Please fill in all fields', 'error');
+                return;
+            }
+
+            fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user_id', data.user_id);
+                    showMessage('loginStatus', 'Login successful!', 'success');
+                    updateSessionStatus();
+                    setTimeout(() => {
+                        document.getElementById('loginEmail').value = '';
+                        document.getElementById('loginPassword').value = '';
+                    }, 500);
+                } else {
+                    showMessage('loginStatus', data.detail || 'Login failed', 'error');
+                }
+            })
+            .catch(e => showMessage('loginStatus', 'Network error: ' + e.message, 'error'));
+        }
+
+        function signup() {
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirm = document.getElementById('signupPasswordConfirm').value;
+
+            if (!email || !password || !confirm) {
+                showMessage('signupStatus', 'Please fill in all fields', 'error');
+                return;
+            }
+
+            if (password !== confirm) {
+                showMessage('signupStatus', 'Passwords do not match', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('signupStatus', 'Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            fetch(`${API_URL}/auth/signup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user_id', data.user_id);
+                    showMessage('signupStatus', 'Signup successful! You are now logged in.', 'success');
+                    updateSessionStatus();
+                    setTimeout(() => {
+                        document.getElementById('signupEmail').value = '';
+                        document.getElementById('signupPassword').value = '';
+                        document.getElementById('signupPasswordConfirm').value = '';
+                    }, 500);
+                } else {
+                    showMessage('signupStatus', data.detail || 'Signup failed', 'error');
+                }
+            })
+            .catch(e => showMessage('signupStatus', 'Network error: ' + e.message, 'error'));
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user_id');
+            updateSessionStatus();
+            showMessage('authMessage', 'You have been logged out', 'success');
+        }
+
+        function updateSessionStatus() {
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('user_id');
+            const statusDiv = document.getElementById('sessionStatus');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            if (token) {
+                statusDiv.innerHTML = `<strong>Logged in</strong><br>User ID: ${userId}`;
+                logoutBtn.classList.remove('hidden');
+            } else {
+                statusDiv.innerHTML = 'Not logged in';
+                logoutBtn.classList.add('hidden');
+            }
+        }
+
+        // Salary submission
+        function submitSalary() {
+            const fields = {
+                job_title: document.getElementById('jobTitle').value,
+                company: document.getElementById('company').value,
+                experience_level: document.getElementById('experienceLevel').value,
+                years_experience: parseInt(document.getElementById('yearsExperience').value),
+                annual_salary_lkr: parseInt(document.getElementById('annualSalary').value),
+                anonymize: document.getElementById('anonymize').checked
+            };
+
+            if (!fields.job_title || !fields.company || !fields.experience_level ||
+                isNaN(fields.years_experience) || isNaN(fields.annual_salary_lkr)) {
+                showMessage('submitMessage', 'Please fill in all required fields', 'error');
+                return;
+            }
+
+            fetch(`${API_URL}/salary/submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fields)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.id) {
+                    showMessage('submitMessage', 'Salary submitted successfully! It will appear in search after 3 community votes.', 'success');
+                    document.getElementById('jobTitle').value = '';
+                    document.getElementById('company').value = '';
+                    document.getElementById('experienceLevel').value = '';
+                    document.getElementById('yearsExperience').value = '';
+                    document.getElementById('annualSalary').value = '';
+                } else {
+                    showMessage('submitMessage', data.detail || 'Submission failed', 'error');
+                }
+            })
+            .catch(e => showMessage('submitMessage', 'Network error: ' + e.message, 'error'));
+        }
+
+        // Search — loads all approved salaries grouped by designation; filters live by role input
+        let _searchDebounce = null;
+        function searchSalaries() {
+            clearTimeout(_searchDebounce);
+            _searchDebounce = setTimeout(_doSearch, 300);
+        }
+
+        function _doSearch() {
+            const role = document.getElementById('searchRole').value.trim();
+            const level = document.getElementById('searchLevel').value;
+            const token = localStorage.getItem('token');
+
+            const params = new URLSearchParams({ approved_only: token ? 'false' : 'true' });
+            if (role) params.append('role', role);
+            if (level) params.append('level', level);
+
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '<div class="loading">Loading salaries...</div>';
+
+            fetch(`${API_URL}/search?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                const results = data.results || [];
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="no-results">No salary data found' + (role ? ` for "${role}"` : '') + '. Be the first to submit!</div>';
+                    return;
+                }
+
+                // Group by job_title
+                const groups = {};
+                results.forEach(item => {
+                    const key = item.job_title;
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(item);
+                });
+
+                let html = '';
+                Object.keys(groups).sort().forEach(designation => {
+                    const items = groups[designation];
+                    html += `<div style="margin-bottom:2rem;">
+                        <h2 style="font-size:1.1rem; font-weight:600; color:#333; padding:0.6rem 0; border-bottom:2px solid #6c63ff; margin-bottom:0.75rem;">
+                            ${designation} <span style="font-size:0.85rem; font-weight:400; color:#888;">(${items.length} ${items.length === 1 ? 'entry' : 'entries'})</span>
+                        </h2>
+                        <table class="results-table"><thead><tr>
+                            <th>Company</th><th>Level</th><th>Years Exp</th><th>Annual Salary (LKR)</th><th>Status</th>`;
+                    if (token) html += '<th>Vote</th>';
+                    html += '</tr></thead><tbody>';
+
+                    items.forEach(item => {
+                        const statusBadge = item.status === 'APPROVED'
+                            ? '<span style="color:#27ae60; font-weight:600;">✅ Approved</span>'
+                            : '<span style="color:#e67e22; font-weight:600;">⏳ Pending</span>';
+                        html += `<tr>
+                            <td>${item.company}</td>
+                            <td>${item.experience_level}</td>
+                            <td>${item.years_experience}</td>
+                            <td><strong>${item.annual_salary_lkr.toLocaleString()}</strong></td>
+                            <td>${statusBadge}</td>`;
+                        if (token) {
+                            html += `<td><div class="vote-buttons">
+                                <button class="success" onclick="vote('${item.id}', 'up')">👍</button>
+                                <button class="danger" onclick="vote('${item.id}', 'down')">👎</button>
+                            </div></td>`;
+                        }
+                        html += '</tr>';
+                    });
+
+                    html += '</tbody></table></div>';
+                });
+
+                if (!token) {
+                    html = '<div class="alert" style="background:#fff3cd;border:1px solid #ffc107;color:#856404;padding:0.75rem 1rem;border-radius:6px;margin-bottom:1.5rem;">🔐 <strong>Log in</strong> to see all submissions including pending ones — and to vote!</div>' + html;
+                }
+
+                resultsDiv.innerHTML = html;
+            })
+            .catch(e => {
+                resultsDiv.innerHTML = '<div class="alert error">Error loading salaries: ' + e.message + '</div>';
+            });
+        }
+
+        // Vote
+        function vote(submissionId, voteType) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please log in to vote');
+                return;
+            }
+
+            fetch(`${API_URL}/vote/${submissionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ vote_type: voteType })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.id) {
+                    const msg = data.status === 'APPROVED'
+                        ? '✅ Submission approved! It now appears in search.'
+                        : `Vote recorded! ${voteType === 'up' ? '👍' : '👎'} Net votes: ${data.net_votes}`;
+                    alert(msg);
+                    searchSalaries();
+                } else {
+                    alert('Vote failed: ' + (data.detail || 'Unknown error'));
+                }
+            })
+            .catch(e => alert('Error: ' + e.message));
+        }
+
+        // Stats
+        function getStats() {
+            const role = document.getElementById('statsRole').value;
+
+            const params = new URLSearchParams();
+            if (role) params.append('role', role);
+
+            const resultsDiv = document.getElementById('statsResults');
+            resultsDiv.innerHTML = '<div class="loading">Loading statistics...</div>';
+
+            fetch(`${API_URL}/stats?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.count === 0) {
+                    resultsDiv.innerHTML = '<div class="no-results">No data available for the selected criteria</div>';
+                    return;
+                }
+
+                const html = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Average Salary</div>
+                            <div class="stat-value">LKR ${data.avg.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Median Salary</div>
+                            <div class="stat-value">LKR ${data.median.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">25th Percentile</div>
+                            <div class="stat-value">LKR ${data.p25.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">75th Percentile</div>
+                            <div class="stat-value">LKR ${data.p75.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Data Points</div>
+                            <div class="stat-value">${data.count}</div>
+                        </div>
+                    </div>
+                `;
+                resultsDiv.innerHTML = html;
+            })
+            .catch(e => {
+                resultsDiv.innerHTML = '<div class="alert error">Error: ' + e.message + '</div>';
+            });
+        }
+
+        // Pending submissions & voting
+        function loadPending() {
+            const token = localStorage.getItem('token');
+            const resultsDiv = document.getElementById('pendingResults');
+            const loginNotice = document.getElementById('pendingLoginNotice');
+
+            if (!token) {
+                loginNotice.classList.remove('hidden');
+                resultsDiv.innerHTML = '';
+                return;
+            }
+            loginNotice.classList.add('hidden');
+            resultsDiv.innerHTML = '<div class="loading">Loading pending submissions...</div>';
+
+            fetch(`${API_URL}/salary/submissions`)
+            .then(r => r.json())
+            .then(data => {
+                const items = (data.submissions || data || []).filter(s => s.status === 'PENDING');
+                if (items.length === 0) {
+                    resultsDiv.innerHTML = '<div class="no-results">No pending submissions right now. Check back later!</div>';
+                    return;
+                }
+
+                let html = `<table class="results-table"><thead><tr>
+                    <th>Role</th><th>Country</th><th>Level</th>
+                    <th>Salary (LKR)</th><th>Years Exp</th><th>Net Votes</th><th>Vote</th>
+                </tr></thead><tbody>`;
+
+                items.forEach(item => {
+                    html += `<tr>
+                        <td>${item.job_title}</td>
+                        <td>${item.country}</td>
+                        <td>${item.experience_level}</td>
+                        <td>${(item.annual_salary_lkr || 0).toLocaleString()}</td>
+                        <td>${item.years_experience}</td>
+                        <td id="votes-${item.id}">${item.net_votes || 0} / 3</td>
+                        <td>
+                            <div class="vote-buttons">
+                                <button class="success" onclick="votePending('${item.id}', 'up')">👍 Upvote</button>
+                                <button class="danger" onclick="votePending('${item.id}', 'down')">👎 Downvote</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                resultsDiv.innerHTML = html;
+            })
+            .catch(e => {
+                resultsDiv.innerHTML = '<div class="alert error">Error loading submissions: ' + e.message + '</div>';
+            });
+        }
+
+        function votePending(submissionId, voteType) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please log in to vote');
+                return;
+            }
+
+            fetch(`${API_URL}/vote/${submissionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ vote_type: voteType })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.id) {
+                    if (data.status === 'APPROVED') {
+                        alert(`✅ Submission approved! It now appears in search results.`);
+                        loadPending();
+                    } else {
+                        const votesCell = document.getElementById(`votes-${submissionId}`);
+                        if (votesCell) votesCell.textContent = `${data.net_votes} / 3`;
+                        alert(`Vote recorded! ${voteType === 'up' ? '👍' : '👎'} Net votes: ${data.net_votes}`);
+                    }
+                } else {
+                    alert('Vote failed: ' + (data.detail || 'Unknown error'));
+                }
+            })
+            .catch(e => alert('Error: ' + e.message));
+        }
+
+        // Utility
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="alert ${type}">${message}</div>`;
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
