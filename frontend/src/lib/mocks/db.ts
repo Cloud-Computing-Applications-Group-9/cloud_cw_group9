@@ -11,9 +11,13 @@ interface MockVote {
   type: VoteType;
 }
 
+interface StoredSubmission extends Submission {
+  ownerId?: string;
+}
+
 interface Store {
   users: Map<string, MockUser>;
-  submissions: Map<string, Submission>;
+  submissions: Map<string, StoredSubmission>;
   votes: Map<string, MockVote>;
   seeded: boolean;
 }
@@ -128,20 +132,26 @@ export function readSession(cookie: string | undefined): string | null {
 
 // --- Submissions ---
 
-export function listSubmissions(opts: { page: number; pageSize: number; q?: string; userId?: string | null }) {
+export function listSubmissions(opts: { page: number; pageSize: number; q?: string; userId?: string | null; status?: string | null; ownedBy?: string | null }) {
   const s = store();
-  const all = Array.from(s.submissions.values()).sort(
-    (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime(),
-  );
+  const statusFilter = opts.status === undefined ? "APPROVED" : opts.status;
+  const all = Array.from(s.submissions.values())
+    .filter((x) => statusFilter === null || x.status === statusFilter)
+    .sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime());
+
+  let filtered = all;
+  if (opts.ownedBy) {
+    filtered = filtered.filter((x) => x.ownerId === opts.ownedBy);
+  }
   const q = opts.q?.toLowerCase().trim();
-  const filtered = q
-    ? all.filter(
-        (x) =>
-          (!x.anonymize && x.company_name.toLowerCase().includes(q)) ||
-          x.role_title.toLowerCase().includes(q) ||
-          x.country.toLowerCase().includes(q),
-      )
-    : all;
+  if (q) {
+    filtered = filtered.filter(
+      (x) =>
+        (!x.anonymize && x.company_name.toLowerCase().includes(q)) ||
+        x.role_title.toLowerCase().includes(q) ||
+        x.country.toLowerCase().includes(q),
+    );
+  }
   const total = filtered.length;
   const start = (opts.page - 1) * opts.pageSize;
   const items = filtered.slice(start, start + opts.pageSize).map((x) => attachMyVote(x, opts.userId));
@@ -155,16 +165,20 @@ export function getSubmission(id: string, userId?: string | null): Submission | 
   return attachMyVote(sub, userId);
 }
 
-export function createSubmission(body: Omit<Submission, "id" | "status" | "upvotes" | "downvotes" | "submitted_at">): Submission {
+export function createSubmission(
+  body: Omit<Submission, "id" | "status" | "upvotes" | "downvotes" | "submitted_at">,
+  ownerId?: string | null,
+): Submission {
   const s = store();
   const id = randomUUID();
-  const sub: Submission = {
+  const sub: StoredSubmission = {
     ...body,
     id,
     status: "PENDING",
     upvotes: 0,
     downvotes: 0,
     submitted_at: new Date().toISOString(),
+    ownerId: ownerId ?? undefined,
   };
   s.submissions.set(id, sub);
   return sub;

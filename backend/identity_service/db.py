@@ -7,7 +7,7 @@ def get_db():
         dbname=os.getenv("POSTGRES_DB", "yourdb"),
         user=os.getenv("POSTGRES_USER", "user"),
         password=os.getenv("POSTGRES_PASSWORD", "password"),
-        host=os.getenv("POSTGRES_HOST", "localhost"),
+        host=os.getenv("POSTGRES_HOST", "postgres"),
         port=os.getenv("POSTGRES_PORT", "5432"),
         options="-c search_path=identity"
     )

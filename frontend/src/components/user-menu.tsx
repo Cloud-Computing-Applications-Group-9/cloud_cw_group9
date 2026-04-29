@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { LogOut, User as UserIcon, Plus } from "lucide-react";
+import { LogOut, User as UserIcon, Plus, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { auth } from "@/lib/api";
 import type { User } from "@/lib/types";
@@ -38,8 +37,7 @@ export function UserMenu({ user }: { user: User | null }) {
     try {
       await auth.logout();
       toast.success("Logged out");
-      router.refresh();
-      router.push("/");
+      window.location.href = "/";
     } catch {
       toast.error("Couldn't log out. Try again.");
     }
@@ -82,6 +80,12 @@ export function UserMenu({ user }: { user: User | null }) {
             <Link href="/">
               <UserIcon className="h-4 w-4" />
               Browse salaries
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/my-submissions">
+              <FileText className="h-4 w-4" />
+              My submissions
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />

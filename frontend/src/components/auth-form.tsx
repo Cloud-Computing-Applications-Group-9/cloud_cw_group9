@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -29,7 +29,6 @@ import {
 type Variant = "login" | "register";
 
 export function AuthForm({ variant }: { variant: Variant }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/";
   const [submitting, setSubmitting] = useState(false);
@@ -52,8 +51,7 @@ export function AuthForm({ variant }: { variant: Variant }) {
         await auth.login({ email: values.email, password: values.password });
         toast.success("Welcome back");
       }
-      router.refresh();
-      router.push(next);
+      window.location.href = next;
     } catch (e) {
       const msg =
         e instanceof ApiError ? e.message : "Something went wrong. Try again.";

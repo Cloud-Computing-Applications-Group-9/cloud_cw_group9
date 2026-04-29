@@ -43,6 +43,6 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const sub = createSubmission(parsed.data);
+  const sub = createSubmission(parsed.data, userId);
   return NextResponse.json(sub, { status: 201 });
 }

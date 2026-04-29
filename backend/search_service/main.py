@@ -9,7 +9,7 @@ app = FastAPI(title="Search Service")
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/techsalarydb",
+    "postgresql://postgres:postgres@postgres:5432/techsalarydb",
 )
 
 

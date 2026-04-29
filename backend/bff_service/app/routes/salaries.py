@@ -15,18 +15,41 @@ async def list_submissions(
     page: int = Query(default=1, ge=1),
     q: Optional[str] = Query(default=None),
 ):
-    """List salary submissions.
-
-    Search is delegated to the search_service when `q` is provided; otherwise
-    the salary_service is queried directly.
-    """
     target = settings.search_service_url if q else settings.salary_service_url
     params: dict = {"page": page, "page_size": settings.default_page_size}
     if q:
         params["q"] = q
+    status_code, payload = await call_upstream("GET", target, "/api/salaries", params=params)
+    raise_for_upstream(status_code, payload)
+    return payload
 
+
+@router.get("/pending")
+async def list_pending(
+    request: Request,
+    page: int = Query(default=1, ge=1),
+):
+    params: dict = {"page": page, "page_size": settings.default_page_size}
     status_code, payload = await call_upstream(
-        "GET", target, "/api/salaries", params=params
+        "GET", settings.salary_service_url, "/api/salaries/pending", params=params
+    )
+    raise_for_upstream(status_code, payload)
+    return payload
+
+
+@router.get("/mine")
+async def list_mine(
+    request: Request,
+    page: int = Query(default=1, ge=1),
+):
+    user_id = require_user_id(request)
+    params: dict = {"page": page, "page_size": settings.default_page_size}
+    status_code, payload = await call_upstream(
+        "GET",
+        settings.salary_service_url,
+        "/api/salaries/mine",
+        params=params,
+        headers={"X-User-Id": user_id},
     )
     raise_for_upstream(status_code, payload)
     return payload
@@ -35,9 +58,7 @@ async def list_submissions(
 @router.get("/{submission_id}")
 async def get_submission(submission_id: str, request: Request):
     status_code, payload = await call_upstream(
-        "GET",
-        settings.salary_service_url,
-        f"/api/salaries/{submission_id}",
+        "GET", settings.salary_service_url, f"/api/salaries/{submission_id}"
     )
     raise_for_upstream(status_code, payload)
     return payload

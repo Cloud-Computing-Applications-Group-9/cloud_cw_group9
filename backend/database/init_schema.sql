@@ -13,6 +13,7 @@ CREATE TABLE identity.users (
 CREATE SCHEMA IF NOT EXISTS salary;
 CREATE TABLE salary.submissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES identity.users(id),
     company_name VARCHAR(255) NOT NULL,
     role_title VARCHAR(255) NOT NULL,
     experience_level VARCHAR(50) NOT NULL,

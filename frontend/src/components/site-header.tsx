@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Wallet } from "lucide-react";
+import { BarChart3, Clock, Wallet } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { UserMenu } from "@/components/user-menu";
 
@@ -25,6 +25,13 @@ export async function SiteHeader() {
             >
               <BarChart3 className="h-4 w-4" />
               <span>Stats</span>
+            </Link>
+            <Link
+              href="/pending"
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <Clock className="h-4 w-4" />
+              <span>Pending</span>
             </Link>
           </nav>
         </div>

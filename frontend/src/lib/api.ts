@@ -119,6 +119,18 @@ export const salaries = {
     const qs = s.toString();
     return request<Paged<Submission>>(`/api/salaries${qs ? `?${qs}` : ""}`);
   },
+  listPending: (params: { page?: number } = {}) => {
+    const s = new URLSearchParams();
+    if (params.page) s.set("page", String(params.page));
+    const qs = s.toString();
+    return request<Paged<Submission>>(`/api/salaries/pending${qs ? `?${qs}` : ""}`);
+  },
+  listMine: (params: { page?: number } = {}) => {
+    const s = new URLSearchParams();
+    if (params.page) s.set("page", String(params.page));
+    const qs = s.toString();
+    return request<Paged<Submission>>(`/api/salaries/mine${qs ? `?${qs}` : ""}`);
+  },
   get: (id: string) => request<Submission>(`/api/salaries/${id}`),
   create: (body: SalarySubmissionInput) =>
     request<Submission>("/api/salaries", {

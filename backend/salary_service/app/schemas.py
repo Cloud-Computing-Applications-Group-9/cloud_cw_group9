@@ -20,6 +20,7 @@ class SalarySubmissionCreate(BaseModel):
 
 class SalarySubmissionResponse(BaseModel):
     id: UUID
+    user_id: Optional[UUID] = None
     company_name: str
     role_title: str
     experience_level: str
