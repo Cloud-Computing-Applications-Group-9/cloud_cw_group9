@@ -1,0 +1,244 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (git SHA, e.g. a1b2c3d4)'
+        required: true
+      deploy_frontend:
+        description: 'Deploy frontend-service?'
+        type: boolean
+        default: false
+      deploy_bff:
+        description: 'Deploy bff-service?'
+        type: boolean
+        default: false
+      deploy_identity:
+        description: 'Deploy identity-service?'
+        type: boolean
+        default: false
+      deploy_salary:
+        description: 'Deploy salary-submission-service?'
+        type: boolean
+        default: false
+      deploy_vote:
+        description: 'Deploy vote-service?'
+        type: boolean
+        default: false
+      deploy_search:
+        description: 'Deploy search-service?'
+        type: boolean
+        default: false
+      deploy_stats:
+        description: 'Deploy stats-service?'
+        type: boolean
+        default: false
+
+env:
+  ACR_NAME: techsalaryacr
+  ACR_LOGIN_SERVER: techsalaryacr.azurecr.io
+  AKS_RESOURCE_GROUP: cloud-coursework
+  AKS_CLUSTER_NAME: techsalary-aks
+
+jobs:
+  # ── Job 1: Build & Push (runs on every push to main) ─────────────────────────
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
+      frontend_changed: ${{ steps.changes.outputs.frontend }}
+      bff_changed: ${{ steps.changes.outputs.bff }}
+      identity_changed: ${{ steps.changes.outputs.identity }}
+      salary_changed: ${{ steps.changes.outputs.salary }}
+      vote_changed: ${{ steps.changes.outputs.vote }}
+      search_changed: ${{ steps.changes.outputs.search }}
+      stats_changed: ${{ steps.changes.outputs.stats }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Generate image tag
+        id: tag
+        run: echo "tag=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+      - name: Detect changed services
+        id: changes
+        run: |
+          git diff --name-only HEAD~1 HEAD > changed_files.txt
+          cat changed_files.txt
+
+          echo "frontend=false" >> $GITHUB_OUTPUT
+          echo "bff=false" >> $GITHUB_OUTPUT
+          echo "identity=false" >> $GITHUB_OUTPUT
+          echo "salary=false" >> $GITHUB_OUTPUT
+          echo "vote=false" >> $GITHUB_OUTPUT
+          echo "search=false" >> $GITHUB_OUTPUT
+          echo "stats=false" >> $GITHUB_OUTPUT
+
+          if grep -q "services/frontend-service/" changed_files.txt; then echo "frontend=true" >> $GITHUB_OUTPUT; fi
+          if grep -q "services/bff-service/" changed_files.txt; then echo "bff=true" >> $GITHUB_OUTPUT; fi
+          if grep -q "services/identity-service/" changed_files.txt; then echo "identity=true" >> $GITHUB_OUTPUT; fi
+          if grep -q "services/salary-submission-service/" changed_files.txt; then echo "salary=true" >> $GITHUB_OUTPUT; fi
+          if grep -q "services/vote-service/" changed_files.txt; then echo "vote=true" >> $GITHUB_OUTPUT; fi
+          if grep -q "services/search-service/" changed_files.txt; then echo "search=true" >> $GITHUB_OUTPUT; fi
+          if grep -q "services/stats-service/" changed_files.txt; then echo "stats=true" >> $GITHUB_OUTPUT; fi
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build & push frontend-service
+        if: steps.changes.outputs.frontend == 'true'
+        run: |
+          docker buildx build --platform linux/amd64 \
+            -t ${{ env.ACR_LOGIN_SERVER }}/frontend-service:${{ steps.tag.outputs.tag }} \
+            services/frontend-service/ --push
+
+      - name: Build & push bff-service
+        if: steps.changes.outputs.bff == 'true'
+        run: |
+          docker buildx build --platform linux/amd64 \
+            -t ${{ env.ACR_LOGIN_SERVER }}/bff-service:${{ steps.tag.outputs.tag }} \
+            services/bff-service/ --push
+
+      - name: Build & push identity-service
+        if: steps.changes.outputs.identity == 'true'
+        run: |
+          docker buildx build --platform linux/amd64 \
+            -t ${{ env.ACR_LOGIN_SERVER }}/identity-service:${{ steps.tag.outputs.tag }} \
+            services/identity-service/ --push
+
+      - name: Build & push salary-submission-service
+        if: steps.changes.outputs.salary == 'true'
+        run: |
+          docker buildx build --platform linux/amd64 \
+            -t ${{ env.ACR_LOGIN_SERVER }}/salary-submission-service:${{ steps.tag.outputs.tag }} \
+            services/salary-submission-service/ --push
+
+      - name: Build & push vote-service
+        if: steps.changes.outputs.vote == 'true'
+        run: |
+          docker buildx build --platform linux/amd64 \
+            -t ${{ env.ACR_LOGIN_SERVER }}/vote-service:${{ steps.tag.outputs.tag }} \
+            services/vote-service/ --push
+
+      - name: Build & push search-service
+        if: steps.changes.outputs.search == 'true'
+        run: |
+          docker buildx build --platform linux/amd64 \
+            -t ${{ env.ACR_LOGIN_SERVER }}/search-service:${{ steps.tag.outputs.tag }} \
+            services/search-service/ --push
+
+      - name: Build & push stats-service
+        if: steps.changes.outputs.stats == 'true'
+        run: |
+          docker buildx build --platform linux/amd64 \
+            -t ${{ env.ACR_LOGIN_SERVER }}/stats-service:${{ steps.tag.outputs.tag }} \
+            services/stats-service/ --push
+
+      - name: Build summary
+        run: |
+          echo "## ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "**Image tag:** \`${{ steps.tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To deploy, go to **Actions → CI/CD Pipeline → Run workflow** and enter tag \`${{ steps.tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Built |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| frontend-service | ${{ steps.changes.outputs.frontend }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| bff-service | ${{ steps.changes.outputs.bff }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| identity-service | ${{ steps.changes.outputs.identity }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| salary-submission-service | ${{ steps.changes.outputs.salary }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| vote-service | ${{ steps.changes.outputs.vote }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| search-service | ${{ steps.changes.outputs.search }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| stats-service | ${{ steps.changes.outputs.stats }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ── Job 2: Deploy (runs only on manual trigger) ───────────────────────────────
+  deploy:
+    name: Deploy to AKS
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Deploy frontend-service
+        if: inputs.deploy_frontend == true
+        run: |
+          kubectl set image deployment/frontend-service \
+            frontend=${{ env.ACR_LOGIN_SERVER }}/frontend-service:${{ inputs.image_tag }} -n app
+          kubectl rollout status deployment/frontend-service -n app --timeout=120s
+
+      - name: Deploy bff-service
+        if: inputs.deploy_bff == true
+        run: |
+          kubectl set image deployment/bff-service \
+            bff=${{ env.ACR_LOGIN_SERVER }}/bff-service:${{ inputs.image_tag }} -n app
+          kubectl rollout status deployment/bff-service -n app --timeout=120s
+
+      - name: Deploy identity-service
+        if: inputs.deploy_identity == true
+        run: |
+          kubectl set image deployment/identity-service \
+            identity=${{ env.ACR_LOGIN_SERVER }}/identity-service:${{ inputs.image_tag }} -n app
+          kubectl rollout status deployment/identity-service -n app --timeout=120s
+
+      - name: Deploy salary-submission-service
+        if: inputs.deploy_salary == true
+        run: |
+          kubectl set image deployment/salary-submission-service \
+            salary-submission=${{ env.ACR_LOGIN_SERVER }}/salary-submission-service:${{ inputs.image_tag }} -n app
+          kubectl rollout status deployment/salary-submission-service -n app --timeout=120s
+
+      - name: Deploy vote-service
+        if: inputs.deploy_vote == true
+        run: |
+          kubectl set image deployment/vote-service \
+            vote=${{ env.ACR_LOGIN_SERVER }}/vote-service:${{ inputs.image_tag }} -n app
+          kubectl rollout status deployment/vote-service -n app --timeout=120s
+
+      - name: Deploy search-service
+        if: inputs.deploy_search == true
+        run: |
+          kubectl set image deployment/search-service \
+            search=${{ env.ACR_LOGIN_SERVER }}/search-service:${{ inputs.image_tag }} -n app
+          kubectl rollout status deployment/search-service -n app --timeout=120s
+
+      - name: Deploy stats-service
+        if: inputs.deploy_stats == true
+        run: |
+          kubectl set image deployment/stats-service \
+            stats=${{ env.ACR_LOGIN_SERVER }}/stats-service:${{ inputs.image_tag }} -n app
+          kubectl rollout status deployment/stats-service -n app --timeout=120s
+
+      - name: Deployment summary
+        run: |
+          echo "## 🚀 Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag deployed:** \`${{ inputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Live at:** http://20.255.123.201" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n app
