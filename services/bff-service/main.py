@@ -64,3 +64,55 @@ async def verify(request: Request):
         )
         return JSONResponse(content=response.json(), status_code=response.status_code)
 
+# ── Salary routes ─────────────────────────────────────────────────────────────
+
+@app.post("/salary/submit")
+async def submit_salary(request: Request):
+    body = await request.json()
+    async with httpx.AsyncClient() as client:
+        response = await client.post(f"{SALARY_URL}/submit", json=body)
+        return JSONResponse(content=response.json(), status_code=response.status_code)
+
+@app.get("/salary/submissions")
+async def get_submissions():
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{SALARY_URL}/submissions")
+        return JSONResponse(content=response.json(), status_code=response.status_code)
+
+# ── Vote routes (requires JWT) ────────────────────────────────────────────────
+
+@app.post("/vote/{submission_id}")
+async def vote(submission_id: str, request: Request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+    extract_user_from_token(auth_header)
+    body = await request.json()
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{VOTE_URL}/vote/{submission_id}",
+            json=body,
+            headers={"Authorization": auth_header}
+        )
+        return JSONResponse(content=response.json(), status_code=response.status_code)
+
+# ── Search routes ─────────────────────────────────────────────────────────────
+
+@app.get("/search")
+async def search(role: str = None, level: str = None, approved_only: bool = True):
+    params = {"approved_only": approved_only}
+    if role: params["role"] = role
+    if level: params["level"] = level
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{SEARCH_URL}/search", params=params)
+        return JSONResponse(content=response.json(), status_code=response.status_code)
+
+# ── Stats routes ──────────────────────────────────────────────────────────────
+
+@app.get("/stats")
+async def get_stats(role: str = None):
+    params = {}
+    if role: params["role"] = role
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{STATS_URL}/stats", params=params)
+        return JSONResponse(content=response.json(), status_code=response.status_code)
