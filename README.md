@@ -8,7 +8,7 @@ Users can submit salary data, vote on pending submissions, and browse approved s
 
 ---
 
-## Repository Structure
+## Repository Structure 
 
 ```
 .
